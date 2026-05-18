@@ -1,7 +1,0 @@
-.env
-*.csv
-data/
-eda_output/
-__pycache__/
-*.pyc
-*.log
