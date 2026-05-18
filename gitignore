@@ -1,0 +1,9 @@
+.env
+data/logs_*.csv
+data/alerts_log.csv
+data/baseline_cache.json
+eda_output/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store

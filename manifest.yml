@@ -1,0 +1,27 @@
+---
+applications:
+  - name: nova-pipeline
+    command: python pipeline.py
+    memory: 512M
+    disk_quota: 1G
+    no-route: true
+    health-check-type: process
+    env:
+      SAP_TOKEN: ((SAP_TOKEN))
+      SAP_BASE_URL: ((SAP_BASE_URL))
+      HANA_HOST: ((HANA_HOST))
+      HANA_PORT: ((HANA_PORT))
+      HANA_USER: ((HANA_USER))
+      HANA_PASSWORD: ((HANA_PASSWORD))
+
+  - name: nova-api
+    command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    memory: 256M
+    disk_quota: 512M
+    env:
+      SAP_TOKEN: ((SAP_TOKEN))
+      SAP_BASE_URL: ((SAP_BASE_URL))
+      HANA_HOST: ((HANA_HOST))
+      HANA_PORT: ((HANA_PORT))
+      HANA_USER: ((HANA_USER))
+      HANA_PASSWORD: ((HANA_PASSWORD))
