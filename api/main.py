@@ -9,8 +9,15 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from google import genai
+from google.genai.types import HttpOptions
+from typer import prompt
 
 load_dotenv()
+
+#gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+gemini_client = genai.Client(http_options=HttpOptions(api_version="v1"))
+GEMINI_MODEL = os.getenv("GEMINI_MODEL")
 
 TOKEN   = os.getenv("SAP_TOKEN")
 BASE    = os.getenv("SAP_BASE_URL")
@@ -201,10 +208,27 @@ Pregunta del usuario: {body.question}
 Responde en espanol, de forma clara y concisa. Si la pregunta es sobre una alerta especifica, explica que detecto y por que se disparo. Si no tienes informacion suficiente, dilo claramente."""
 
     try:
+        response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
+        answer = response.text
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en Gemini API: {e}")
+
+    return {
+        "question": body.question,
+        "answer": answer,
+        "context_alerts": len(alerts),
+        "timestamp_utc": datetime.now(timezone.utc).isoformat()
+    }
+"""
+    try:
         response = req.post(
             "https://api.anthropic.com/v1/messages",
             headers={"Content-Type": "application/json"},
             json={
+                "x-api-key": os.getenv("ANTHROPIC_API_KEY"),
                 "model": "claude-sonnet-4-20250514",
                 "max_tokens": 500,
                 "messages": [{"role": "user", "content": prompt}]
@@ -221,7 +245,7 @@ Responde en espanol, de forma clara y concisa. Si la pregunta es sobre una alert
         "context_alerts": len(alerts),
         "timestamp_utc": datetime.now(timezone.utc).isoformat()
     }
-
+"""
 
 @app.post("/trigger")
 def trigger_detection():

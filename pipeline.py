@@ -93,7 +93,7 @@ def smart_poll_mode():
                 success, ws, df, fetch_time = fetch_and_save()
                 if success:
                     analyzed_windows.add(ws)
-                    run_detection(df, window_start=ws, fetch_time=fetch_time)
+                    #run_detection(df, window_start=ws, fetch_time=fetch_time)
             else:
                 print(f"  [{now_str} UTC] Ventana {window_start[11:16]} ya analizada — min {current_minute}/30")
         else:
