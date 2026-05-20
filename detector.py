@@ -611,7 +611,7 @@ except Exception:
     HANA_ENABLED = False
 
 
-def send_alert(message: str, alert_type: str = "unknown", severity: str = "MEDIUM", window_start: str = None, fetch_time=None):
+'''def send_alert(message: str, alert_type: str = "unknown", severity: str = "MEDIUM", window_start: str = None, fetch_time=None):
     if len(message) > 300:
         message = message[:297] + "..."
     r = requests.post(f"{BASE}/alert", headers=HEADERS, json={"message": message})
@@ -657,7 +657,7 @@ def send_alert(message: str, alert_type: str = "unknown", severity: str = "MEDIU
             print(f"  HANA insert_alert error: {e}")
 
     return status
-
+'''
 
 # ============================================================================
 # PIPELINE COMPLETO
