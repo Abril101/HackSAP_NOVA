@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Loading environment variables for SAP API and NOVA API
 TOKEN   = os.getenv("SAP_TOKEN")
 BASE    = os.getenv("SAP_BASE_URL")
 HEADERS = {"Authorization": f"Bearer {TOKEN}"}
