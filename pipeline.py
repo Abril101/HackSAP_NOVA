@@ -5,8 +5,10 @@ import time
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from detector import run_detection
+from hana import insert_logs, setup_tables
+from hdbcli import dbapi
 
-HANA_ENABLED = False
+HANA_ENABLED = True
 
 load_dotenv()
 
@@ -81,23 +83,29 @@ def smart_poll_mode():
     print("=" * 60)
 
     while True:
-        current_minute = get_window_minute()
-        now_str = datetime.utcnow().strftime("%H:%M:%S")
+        try:
+            current_minute = get_window_minute()
+            now_str = datetime.utcnow().strftime("%H:%M:%S")
 
-        info = fetch_info()
+            info = fetch_info()
 
-        if info and info.get("total_records", 0) > 0:
-            window_start = info["window_start"]
+            if info and info.get("total_records", 0) > 0:
+                window_start = info["window_start"]
 
-            if window_start not in analyzed_windows:
-                success, ws, df, fetch_time = fetch_and_save()
-                if success:
-                    analyzed_windows.add(ws)
-                    #run_detection(df, window_start=ws, fetch_time=fetch_time)
+                if window_start not in analyzed_windows:
+                    success, ws, df, fetch_time = fetch_and_save()
+                    if success:
+                        analyzed_windows.add(ws)
+                        run_detection(df, window_start=ws, fetch_time=fetch_time)
+                else:
+                    print(f"  [{now_str} UTC] Ventana {window_start[11:16]} ya analizada — min {current_minute}/30")
             else:
-                print(f"  [{now_str} UTC] Ventana {window_start[11:16]} ya analizada — min {current_minute}/30")
-        else:
-            print(f"  [{now_str} UTC] Sin datos — min {current_minute}/30")
+                print(f"  [{now_str} UTC] Sin datos — min {current_minute}/30")
+
+        except Exception as e:
+            print(f"  [ERROR] Excepcion en loop principal: {e}. Reintentando en 30s...")
+            time.sleep(30)
+            continue
 
         time.sleep(60)
 
