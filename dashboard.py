@@ -175,7 +175,7 @@ hr { border-color: #ede8f5 !important; }
 # -----------------------------------helper graficos-----------------------------------------
 
 def line_chart(data, height=280, title_x="Ventana", title_y="Conteo"):
-    df_melted = data.reset_index().melt(id_vars=data.index.name or "index", 
+    df_melted = data.reset_index().melt(id_vars=data.index.name or "index",
                                          var_name="Tipo", value_name="Valor")
     col_x = df_melted.columns[0]
     chart = (
@@ -231,7 +231,7 @@ def bar_chart(series, height=180, title_x="Categoría", title_y="Conteo", color=
     )
     return chart
 
-# Header 
+# Header
 col_logo, col_title, col_time = st.columns([1, 7, 2])
 with col_logo:
     st.markdown("""
@@ -444,7 +444,7 @@ st.markdown('<div class="label-mono" style="margin-bottom:10px;">Estado del sist
             unsafe_allow_html=True)
 
 status_data = api_get_status()
-c1, c2, c3 = st.columns(3) #c4, c5, c6 = st.columns(6)
+c1, c2, c3 = st.columns(3)
 
 try:
     health = requests.get(f"{BASE}/health", timeout=5).json()
@@ -463,17 +463,15 @@ except Exception:
     c3.metric("Ventana", "-")
 
 c4, c5, c6 = st.columns(3)
-
 c4.metric("Alertas totales", status_data.get("total_alerts", "-"))
 c5.metric("HIGH",            status_data.get("high_alerts",  "-"))
 c6.metric("MEDIUM",          status_data.get("medium_alerts","-"))
 
-# Cargar datos principales 
+# Cargar datos principales
 if data_source == "HANA Cloud":
     df_all = load_from_hana()
     alerts_df = load_alerts_from_hana()
 else:
-    #dir_data =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     csv_files = sorted(glob.glob(f"data/logs_*.csv"))
     df_all = load_all_csv()
     alerts_df = load_alerts_csv()
@@ -496,7 +494,7 @@ LOG_CRITICOS = ["LLM_ERROR","LLM_TIMEOUT","SECURITY","ERROR","WARNING"]
     "Asistente NOVA",
 ])
 
-# TAB 1 — VISTA GENERAL 
+# TAB 1 — VISTA GENERAL
 with tab_general:
 
     st.markdown('<div class="section-title">Tendencias históricas — todas las ventanas</div>',
@@ -512,7 +510,6 @@ with tab_general:
     pivot.index = [w[9:13]+":"+w[13:15] for w in pivot.index]
 
     st.altair_chart(line_chart(pivot, height=280, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
-    #st.line_chart(pivot, height=280)
 
     st.markdown("<hr>", unsafe_allow_html=True)
     col_left, col_right = st.columns(2)
@@ -578,7 +575,6 @@ with tab_general:
         st.markdown('<div class="label-mono" style="margin:10px 0 4px;">Costo LLM promedio por ventana</div>',
                     unsafe_allow_html=True)
         st.altair_chart(line_chart(cost_by_window, height=160, title_x="Ventana (HH:MM)", title_y="Gasto"), use_container_width=True)
-        #st.line_chart(cost_by_window, height=160)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -615,10 +611,9 @@ with tab_general:
         pivot_week.index = [f"{w[6:8]}/{w[4:6]} {w[9:11]}:{w[11:13]}" for w in pivot_week.index]
 
         st.altair_chart(line_chart(pivot_week, height=220, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
-        #st.line_chart(pivot_week, height=220)
 
 
-# TAB 2 — MONITOREO EN VIVO 
+# TAB 2 — MONITOREO EN VIVO
 with tab_live:
     alerts_api_data = api_get_alerts(limit=100)
     alerts_api_list = alerts_api_data.get("alerts", [])
@@ -665,18 +660,16 @@ with tab_live:
         if not alerts_api_df.empty and "severity" in alerts_api_df.columns:
             st.markdown('<div class="label-mono" style="margin-bottom:6px;">Por severidad</div>',
                         unsafe_allow_html=True)
-            st.altair_chart(bar_chart(alerts_api_df["severity"].value_counts(), 
-                           title_x="Severidad", title_y="Cantidad", color="#6B3FA0"), 
+            st.altair_chart(bar_chart(alerts_api_df["severity"].value_counts(),
+                           title_x="Severidad", title_y="Cantidad", color="#6B3FA0"),
                  use_container_width=True)
-            #st.bar_chart(alerts_api_df["severity"].value_counts(), height=160, color="#6B3FA0")
 
             if "alert_type" in alerts_api_df.columns:
                 st.markdown('<div class="label-mono" style="margin:10px 0 6px;">Por tipo de detección</div>',
                             unsafe_allow_html=True)
-                st.altair_chart(bar_chart(alerts_api_df["alert_type"].value_counts().head(8), 
-                           title_x="Tipo de detección", title_y="Cantidad", color="#a78bfa"), 
+                st.altair_chart(bar_chart(alerts_api_df["alert_type"].value_counts().head(8),
+                           title_x="Tipo de detección", title_y="Cantidad", color="#a78bfa"),
                  use_container_width=True)
-                #st.bar_chart(alerts_api_df["alert_type"].value_counts().head(8), height=180, color="#a78bfa")
 
         if not alerts_api_df.empty and "response_ms" in alerts_api_df.columns:
             valid = alerts_api_df["response_ms"].dropna()
@@ -700,9 +693,7 @@ with tab_live:
             .size().unstack(fill_value=0).sort_index()
         )
         pivot_live.index = [w[9:13]+":"+w[13:15] for w in pivot_live.index]
-
         st.altair_chart(line_chart(pivot_live, height=240, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
-        #st.line_chart(pivot_live, height=240)
     else:
         st.info("Sin datos CSV. Corre pipeline.py para capturar logs.")
 
@@ -776,7 +767,6 @@ def show_attack_tab(df_all, alerts_df, date_str, label, description, card_css):
     )
     pivot.index = [w[9:13]+":"+w[13:15] for w in pivot.index]
     st.altair_chart(line_chart(pivot, height=250, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
-    #st.line_chart(pivot, height=250)
 
     col_left, col_right = st.columns(2)
 
@@ -814,10 +804,9 @@ def show_attack_tab(df_all, alerts_df, date_str, label, description, card_css):
                 .groupby("sap_function_application").size()
                 .sort_values(ascending=False).head(10)
             )
-            st.altair_chart(bar_chart(app_errors, 
-                           title_x="Aplicación SAP", title_y="Cantidad", color="#6B3FA0"), 
+            st.altair_chart(bar_chart(app_errors,
+                           title_x="Aplicación SAP", title_y="Cantidad", color="#6B3FA0"),
                  use_container_width=True)
-            #st.bar_chart(app_errors, height=250, color="#6B3FA0")
 
 
 # TABS ATAQUES
@@ -873,9 +862,8 @@ with tab_baseline:
             st.markdown('<div class="label-mono" style="margin:16px 0 8px;">Comparativa mediana vs umbral</div>',
                         unsafe_allow_html=True)
             chart_data = df_bl.set_index("Tipo de log")[["Mediana (hist.)","Umbral (3.5s)"]]
-            st.altair_chart(bar_chart(chart_data, color=["#c4b5fd","#6B3FA0"]), 
+            st.altair_chart(bar_chart(chart_data, color=["#c4b5fd","#6B3FA0"]),
                  use_container_width=True)
-            #st.bar_chart(chart_data, height=260, color=["#c4b5fd","#6B3FA0"])
         else:
             st.info("Baseline vacío. Corre el pipeline al menos 5 ventanas para generarlo.")
 
@@ -903,8 +891,6 @@ with tab_chat:
     for i, s in enumerate(suggestions):
         with sugg_cols[i % 3]:
             if st.button(s, key=f"sugg_{i}", use_container_width=True):
-                #st.session_state["chat_input"] = s
-                #st.rerun()
                 st.session_state["pending_question"] = s
 
     st.markdown("<hr style='margin:14px 0'>", unsafe_allow_html=True)
@@ -924,7 +910,6 @@ with tab_chat:
     with sc2:
         if st.button("Limpiar", use_container_width=True):
             st.session_state.chat_history = []
-            #st.rerun()
 
     if send and question.strip():
         with st.spinner("NOVA está analizando..."):
@@ -935,7 +920,6 @@ with tab_chat:
             "ts":  datetime.utcnow().strftime("%H:%M:%S"),
             "ctx": response.get("context_alerts", 0),
         })
-        #st.rerun()
 
     for entry in reversed(st.session_state.chat_history):
         answer_html = entry['a'].replace('\n', '<br>')
@@ -974,8 +958,7 @@ with tab_chat:
         </div>
         """, unsafe_allow_html=True)
 
-
-# Auto-refresh 
+# Auto-refresh
 if auto_refresh:
     time.sleep(refresh_interval)
     st.cache_data.clear()
