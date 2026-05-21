@@ -69,7 +69,15 @@ Verificar que está corriendo:
 tail -f data/pipeline.log
 ```
 
-### 2. Dashboard de visualización
+### 2. FastApi
+
+```bash
+uvicorn main:app --reload
+```
+
+Se abre en `http://localhost:8000`
+
+### 3. Dashboard de visualización
 
 ```bash
 streamlit run dashboard.py
@@ -77,7 +85,7 @@ streamlit run dashboard.py
 
 Se abre en `http://localhost:8501`
 
-### 3. Solo detección (sobre el CSV más reciente)
+### 4. Solo detección (sobre el CSV más reciente)
 
 ```bash
 python3 detector.py
