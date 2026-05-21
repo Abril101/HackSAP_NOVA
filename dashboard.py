@@ -6,6 +6,7 @@ import requests
 import time
 from datetime import datetime
 from dotenv import load_dotenv
+import altair as alt
 
 load_dotenv()
 
@@ -47,7 +48,7 @@ h1, h2, h3, h4 {
 [data-testid="stMetric"] {
     background: #ffffff;
     border: 1px solid #ede8f5;
-    border-top: 3px solid #7c3aed;
+    border-top: 3px solid #6B3FA0;
     border-radius: 10px;
     padding: 18px 20px !important;
     box-shadow: 0 1px 4px rgba(124,58,237,0.06);
@@ -55,7 +56,7 @@ h1, h2, h3, h4 {
 }
 [data-testid="stMetric"]:hover { box-shadow: 0 4px 16px rgba(124,58,237,0.12); }
 [data-testid="stMetricLabel"] {
-    color: #7c3aed !important;
+    color: #6B3FA0 !important;
     font-family: 'DM Mono', monospace !important;
     font-size: 0.65rem !important;
     text-transform: uppercase;
@@ -78,7 +79,7 @@ h1, h2, h3, h4 {
 }
 [data-testid="stTabs"] button[aria-selected="true"] {
     color: #5b21b6 !important;
-    border-bottom: 2px solid #7c3aed !important;
+    border-bottom: 2px solid #6B3FA0 !important;
 }
 
 [data-testid="stDataFrame"] {
@@ -89,7 +90,7 @@ h1, h2, h3, h4 {
 }
 
 .stButton > button {
-    background: #7c3aed !important;
+    background: #6B3FA0 !important;
     color: white !important;
     border: none !important;
     border-radius: 8px !important;
@@ -110,7 +111,7 @@ h1, h2, h3, h4 {
     border-radius: 8px !important;
 }
 .stTextInput > div > div > input:focus {
-    border-color: #7c3aed !important;
+    border-color: #6B3FA0 !important;
     box-shadow: 0 0 0 3px rgba(124,58,237,0.1) !important;
 }
 
@@ -126,7 +127,7 @@ hr { border-color: #ede8f5 !important; }
 [data-testid="stAlert"] {
     background: #faf8ff !important;
     border: 1px solid #ede8f5 !important;
-    border-left: 3px solid #7c3aed !important;
+    border-left: 3px solid #6B3FA0 !important;
     border-radius: 8px !important;
     color: #1a1025 !important;
 }
@@ -141,7 +142,7 @@ hr { border-color: #ede8f5 !important; }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: #f8f7fc; }
 ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+::-webkit-scrollbar-thumb:hover { background: #6B3FA0; }
 
 .label-mono {
     font-family: 'DM Mono', monospace;
@@ -167,17 +168,75 @@ hr { border-color: #ede8f5 !important; }
 }
 .attack-card-red    { border-left: 4px solid #dc2626; }
 .attack-card-orange { border-left: 4px solid #d97706; }
-.attack-card-purple { border-left: 4px solid #7c3aed; }
+.attack-card-purple { border-left: 4px solid #6B3FA0; }
 </style>
 """, unsafe_allow_html=True)
 
+# -----------------------------------helper graficos-----------------------------------------
+
+def line_chart(data, height=280, title_x="Ventana", title_y="Conteo"):
+    df_melted = data.reset_index().melt(id_vars=data.index.name or "index", 
+                                         var_name="Tipo", value_name="Valor")
+    col_x = df_melted.columns[0]
+    chart = (
+        alt.Chart(df_melted)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X(col_x, title=title_x, axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("Valor:Q", title=title_y),
+            color=alt.Color("Tipo:N", legend=alt.Legend(title="Tipo de log")),
+            tooltip=[col_x, "Tipo", "Valor"]
+        )
+        .properties(height=height, background="white")
+        .configure_view(strokeWidth=0)
+        .configure_axis(
+            gridColor="#ede8f5",
+            domainColor="#ede8f5",
+            labelColor="#3d2870",
+            titleColor="#5b21b6",
+            labelFont="DM Mono, monospace",
+            titleFont="DM Sans, sans-serif",
+            titleFontSize=12,
+            labelFontSize=10,
+        )
+        .configure_legend(
+            labelColor="#1a1025",
+            titleColor="#6B3FA0",
+            labelFont="DM Mono, monospace",
+            titleFont="DM Sans, sans-serif",
+        )
+    )
+    return chart
+
+def bar_chart(series, height=180, title_x="Categoría", title_y="Conteo", color="#6B3FA0"):
+    df_bar = series.reset_index()
+    df_bar.columns = ["Categoría", "Conteo"]
+    chart = (
+        alt.Chart(df_bar)
+        .mark_bar(color=color)
+        .encode(
+            x=alt.X("Categoría:N", title=title_x, axis=alt.Axis(labelAngle=-30)),
+            y=alt.Y("Conteo:Q", title=title_y),
+            tooltip=["Categoría", "Conteo"]
+        )
+        .properties(height=height, background="white")
+        .configure_view(strokeWidth=0)
+        .configure_axis(
+            gridColor="#ede8f5",
+            labelColor="#3d2870",
+            titleColor="#5b21b6",
+            labelFont="DM Mono, monospace",
+            titleFont="DM Sans, sans-serif",
+        )
+    )
+    return chart
 
 # Header 
 col_logo, col_title, col_time = st.columns([1, 7, 2])
 with col_logo:
     st.markdown("""
     <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="56" height="56" rx="14" fill="#7c3aed"/>
+      <rect width="56" height="56" rx="14" fill="#6B3FA0"/>
       <polygon points="28,8 50,46 6,46" fill="none" stroke="white" stroke-width="2.5"/>
       <polygon points="28,17 42,41 14,41" fill="none" stroke="white" stroke-width="1.2" opacity="0.5"/>
       <circle cx="28" cy="33" r="3.5" fill="white"/>
@@ -203,7 +262,7 @@ with col_time:
         <div style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: #9b8ab4;
                     text-transform: uppercase; letter-spacing: 0.1em;">UTC</div>
         <div style="font-family: 'Playfair Display', serif; font-size: 1.1rem;
-                    color: #7c3aed; font-weight: 600;">{datetime.utcnow().strftime('%H:%M:%S')}</div>
+                    color: #6B3FA0; font-weight: 600;">{datetime.utcnow().strftime('%H:%M:%S')}</div>
         <div style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: #c4b5fd;">
             {datetime.utcnow().strftime('%d %b %Y')}
         </div>
@@ -376,7 +435,7 @@ with st.sidebar:
     st.markdown(f"""
     <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:#9b8ab4;line-height:2;">
         Última actualización<br>
-        <span style="color:#7c3aed;font-size:0.75rem;">{datetime.utcnow().strftime('%H:%M:%S')} UTC</span>
+        <span style="color:#6B3FA0;font-size:0.75rem;">{datetime.utcnow().strftime('%H:%M:%S')} UTC</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -451,7 +510,9 @@ with tab_general:
         .size().unstack(fill_value=0).sort_index()
     )
     pivot.index = [w[9:13]+":"+w[13:15] for w in pivot.index]
-    st.line_chart(pivot, height=280)
+
+    st.altair_chart(line_chart(pivot, height=280, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
+    #st.line_chart(pivot, height=280)
 
     st.markdown("<hr>", unsafe_allow_html=True)
     col_left, col_right = st.columns(2)
@@ -516,7 +577,8 @@ with tab_general:
         cost_by_window.index = [w[9:13]+":"+w[13:15] for w in cost_by_window.index]
         st.markdown('<div class="label-mono" style="margin:10px 0 4px;">Costo LLM promedio por ventana</div>',
                     unsafe_allow_html=True)
-        st.line_chart(cost_by_window, height=160)
+        st.altair_chart(line_chart(cost_by_window, height=160, title_x="Ventana (HH:MM)", title_y="Gasto"), use_container_width=True)
+        #st.line_chart(cost_by_window, height=160)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -551,7 +613,9 @@ with tab_general:
             .size().unstack(fill_value=0).sort_index()
         )
         pivot_week.index = [f"{w[6:8]}/{w[4:6]} {w[9:11]}:{w[11:13]}" for w in pivot_week.index]
-        st.line_chart(pivot_week, height=220)
+
+        st.altair_chart(line_chart(pivot_week, height=220, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
+        #st.line_chart(pivot_week, height=220)
 
 
 # TAB 2 — MONITOREO EN VIVO 
@@ -601,12 +665,18 @@ with tab_live:
         if not alerts_api_df.empty and "severity" in alerts_api_df.columns:
             st.markdown('<div class="label-mono" style="margin-bottom:6px;">Por severidad</div>',
                         unsafe_allow_html=True)
-            st.bar_chart(alerts_api_df["severity"].value_counts(), height=160, color="#7c3aed")
+            st.altair_chart(bar_chart(alerts_api_df["severity"].value_counts(), 
+                           title_x="Severidad", title_y="Cantidad", color="#6B3FA0"), 
+                 use_container_width=True)
+            #st.bar_chart(alerts_api_df["severity"].value_counts(), height=160, color="#6B3FA0")
 
             if "alert_type" in alerts_api_df.columns:
                 st.markdown('<div class="label-mono" style="margin:10px 0 6px;">Por tipo de detección</div>',
                             unsafe_allow_html=True)
-                st.bar_chart(alerts_api_df["alert_type"].value_counts().head(8), height=180, color="#a78bfa")
+                st.altair_chart(bar_chart(alerts_api_df["alert_type"].value_counts().head(8), 
+                           title_x="Tipo de detección", title_y="Cantidad", color="#a78bfa"), 
+                 use_container_width=True)
+                #st.bar_chart(alerts_api_df["alert_type"].value_counts().head(8), height=180, color="#a78bfa")
 
         if not alerts_api_df.empty and "response_ms" in alerts_api_df.columns:
             valid = alerts_api_df["response_ms"].dropna()
@@ -620,7 +690,7 @@ with tab_live:
 
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown('<div class="section-title">Tendencia histórica de logs</div>', unsafe_allow_html=True)
-    st.markdown('<div class="label-mono" style="margin-bottom:12px;">Eventos criticos por ventana · CSV local</div>',
+    st.markdown('<div class="label-mono" style="margin-bottom:12px;">#Logs criticos por ventana · CSV local</div>',
                 unsafe_allow_html=True)
 
     if not df_all.empty:
@@ -630,7 +700,9 @@ with tab_live:
             .size().unstack(fill_value=0).sort_index()
         )
         pivot_live.index = [w[9:13]+":"+w[13:15] for w in pivot_live.index]
-        st.line_chart(pivot_live, height=240)
+
+        st.altair_chart(line_chart(pivot_live, height=240, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
+        #st.line_chart(pivot_live, height=240)
     else:
         st.info("Sin datos CSV. Corre pipeline.py para capturar logs.")
 
@@ -689,11 +761,11 @@ def show_attack_tab(df_all, alerts_df, date_str, label, description, card_css):
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Registros totales", f"{total:,}")
-    c2.metric("Eventos de error",  f"{errors:,}")
+    c2.metric("#Logs de error",  f"{errors:,}")
     c3.metric("Tasa de error",     f"{error_rate:.1f}%")
     c4.metric("Requests LLM",      f"{llm_req:,}")
 
-    st.markdown('<div class="label-mono" style="margin:14px 0 6px;">Evolución de eventos críticos durante el ataque</div>',
+    st.markdown('<div class="label-mono" style="margin:14px 0 6px;">Evolución de #Logs críticos durante el ataque</div>',
                 unsafe_allow_html=True)
 
     log_all = ["LLM_ERROR","LLM_TIMEOUT","SECURITY","ERROR","WARNING","LLM_REQUEST"]
@@ -703,7 +775,8 @@ def show_attack_tab(df_all, alerts_df, date_str, label, description, card_css):
         .size().unstack(fill_value=0).sort_index()
     )
     pivot.index = [w[9:13]+":"+w[13:15] for w in pivot.index]
-    st.line_chart(pivot, height=250)
+    st.altair_chart(line_chart(pivot, height=250, title_x="Ventana (HH:MM)", title_y="#Logs"), use_container_width=True)
+    #st.line_chart(pivot, height=250)
 
     col_left, col_right = st.columns(2)
 
@@ -741,7 +814,10 @@ def show_attack_tab(df_all, alerts_df, date_str, label, description, card_css):
                 .groupby("sap_function_application").size()
                 .sort_values(ascending=False).head(10)
             )
-            st.bar_chart(app_errors, height=250, color="#7c3aed")
+            st.altair_chart(bar_chart(app_errors, 
+                           title_x="Aplicación SAP", title_y="Cantidad", color="#6B3FA0"), 
+                 use_container_width=True)
+            #st.bar_chart(app_errors, height=250, color="#6B3FA0")
 
 
 # TABS ATAQUES
@@ -797,7 +873,9 @@ with tab_baseline:
             st.markdown('<div class="label-mono" style="margin:16px 0 8px;">Comparativa mediana vs umbral</div>',
                         unsafe_allow_html=True)
             chart_data = df_bl.set_index("Tipo de log")[["Mediana (hist.)","Umbral (3.5s)"]]
-            st.bar_chart(chart_data, height=260, color=["#c4b5fd","#7c3aed"])
+            st.altair_chart(bar_chart(chart_data, color=["#c4b5fd","#6B3FA0"]), 
+                 use_container_width=True)
+            #st.bar_chart(chart_data, height=260, color=["#c4b5fd","#6B3FA0"])
         else:
             st.info("Baseline vacío. Corre el pipeline al menos 5 ventanas para generarlo.")
 
@@ -869,11 +947,11 @@ with tab_chat:
                             color:#9b8ab4;margin-bottom:4px;">TÚ · {entry['ts']} UTC</div>
                 <div style="color:#1a1025;font-size:0.9rem;">{entry['q']}</div>
             </div>
-            <div style="background:#ffffff;border:1px solid #ede8f5;border-left:3px solid #7c3aed;
+            <div style="background:#ffffff;border:1px solid #ede8f5;border-left:3px solid #6B3FA0;
                         border-radius:2px 12px 12px 12px;padding:14px 18px;
                         box-shadow:0 1px 4px rgba(124,58,237,0.06);">
                 <div style="font-family:'DM Mono',monospace;font-size:0.6rem;
-                            color:#7c3aed;margin-bottom:6px;">
+                            color:#6B3FA0;margin-bottom:6px;">
                     NOVA · {entry['ctx']} alertas en contexto
                 </div>
                 <div style="color:#1a1025;font-size:0.9rem;line-height:1.6;">

@@ -4,3 +4,13 @@ scikit-learn
 requests
 python-dotenv
 streamlit
+fastapi
+uvicorn
+pydantic
+openai
+google-genai
+typer
+altair
+matplotlib
+seaborn
+hdbcli
