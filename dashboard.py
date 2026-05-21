@@ -128,7 +128,14 @@ hr { border-color: #ede8f5 !important; }
     border: 1px solid #ede8f5 !important;
     border-left: 3px solid #7c3aed !important;
     border-radius: 8px !important;
-    color: #3d2870 !important;
+    color: #1a1025 !important;
+}
+
+[data-testid="stAlert"] *,
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span,
+[data-testid="stAlert"] div {
+    color: #1a1025 !important;
 }
 
 ::-webkit-scrollbar { width: 5px; }
@@ -378,7 +385,7 @@ st.markdown('<div class="label-mono" style="margin-bottom:10px;">Estado del sist
             unsafe_allow_html=True)
 
 status_data = api_get_status()
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1, c2, c3 = st.columns(3) #c4, c5, c6 = st.columns(6)
 
 try:
     health = requests.get(f"{BASE}/health", timeout=5).json()
@@ -396,6 +403,8 @@ except Exception:
     c2.metric("Registros", "-")
     c3.metric("Ventana", "-")
 
+c4, c5, c6 = st.columns(3)
+
 c4.metric("Alertas totales", status_data.get("total_alerts", "-"))
 c5.metric("HIGH",            status_data.get("high_alerts",  "-"))
 c6.metric("MEDIUM",          status_data.get("medium_alerts","-"))
@@ -405,7 +414,8 @@ if data_source == "HANA Cloud":
     df_all = load_from_hana()
     alerts_df = load_alerts_from_hana()
 else:
-    csv_files = sorted(glob.glob("data/logs_*.csv"))
+    #dir_data =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    csv_files = sorted(glob.glob(f"data/logs_*.csv"))
     df_all = load_all_csv()
     alerts_df = load_alerts_csv()
 
@@ -815,7 +825,9 @@ with tab_chat:
     for i, s in enumerate(suggestions):
         with sugg_cols[i % 3]:
             if st.button(s, key=f"sugg_{i}", use_container_width=True):
-                st.session_state.pending_question = s
+                #st.session_state["chat_input"] = s
+                #st.rerun()
+                st.session_state["pending_question"] = s
 
     st.markdown("<hr style='margin:14px 0'>", unsafe_allow_html=True)
 
@@ -826,7 +838,7 @@ with tab_chat:
         key="chat_input"
     )
     if "pending_question" in st.session_state:
-        del st.session_state.pending_question
+        del st.session_state["pending_question"]
 
     sc1, sc2 = st.columns([3, 1])
     with sc1:
@@ -834,19 +846,21 @@ with tab_chat:
     with sc2:
         if st.button("Limpiar", use_container_width=True):
             st.session_state.chat_history = []
-            st.rerun()
+            #st.rerun()
 
     if send and question.strip():
         with st.spinner("NOVA está analizando..."):
             response = api_chat(question.strip())
         st.session_state.chat_history.append({
             "q":   question.strip(),
-            "a":   response.get("answer", "Sin respuesta"),
+            "a":   response.get("answer", "Sin respuesta").strip(),
             "ts":  datetime.utcnow().strftime("%H:%M:%S"),
             "ctx": response.get("context_alerts", 0),
         })
+        #st.rerun()
 
     for entry in reversed(st.session_state.chat_history):
+        answer_html = entry['a'].replace('\n', '<br>')
         st.markdown(f"""
         <div style="margin-bottom:18px;">
             <div style="background:#f8f7fc;border:1px solid #ede8f5;
@@ -862,8 +876,8 @@ with tab_chat:
                             color:#7c3aed;margin-bottom:6px;">
                     NOVA · {entry['ctx']} alertas en contexto
                 </div>
-                <div style="color:#1a1025;font-size:0.9rem;white-space:pre-wrap;line-height:1.6;">
-                    {entry['a']}
+                <div style="color:#1a1025;font-size:0.9rem;line-height:1.6;">
+                {answer_html}
                 </div>
             </div>
         </div>

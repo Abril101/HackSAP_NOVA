@@ -12,12 +12,19 @@ from pydantic import BaseModel
 from google import genai
 from google.genai.types import HttpOptions
 from typer import prompt
+from openai import OpenAI
 
 load_dotenv()
 
 #gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-gemini_client = genai.Client(http_options=HttpOptions(api_version="v1"))
-GEMINI_MODEL = os.getenv("GEMINI_MODEL")
+#gemini_client = genai.Client(http_options=HttpOptions(api_version="v1"))
+#GEMINI_MODEL = os.getenv("GEMINI_MODEL")
+
+client = OpenAI(
+    base_url=os.getenv("ENDPOINT"),
+    api_key=os.getenv("API_KEY")
+)
+OPENAI_MODEL = os.getenv("DEPLOYMENT_NAME")
 
 TOKEN   = os.getenv("SAP_TOKEN")
 BASE    = os.getenv("SAP_BASE_URL")
@@ -208,11 +215,11 @@ Pregunta del usuario: {body.question}
 Responde en espanol, de forma clara y concisa. Si la pregunta es sobre una alerta especifica, explica que detecto y por que se disparo. Si no tienes informacion suficiente, dilo claramente."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
-        answer = response.text
+        answer = response.choices[0].message.content
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en Gemini API: {e}")
 
