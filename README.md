@@ -134,4 +134,4 @@ python3 detector.py
 
 ## Equipo
 
-Proyecto desarrollado junto a Cedrick Treviño, Steffany Lara, Ana Lidia Hernández Díaz y Brisma Teresita Alvarez Valdez, como parte del Hackathon SAP x SEIDM 2026 en el Tec de Monterrey.
+Proyecto desarrollado por Abril Alvarez Mercado, Cedrick Treviño, Steffany Lara, Ana Lidia Hernández Díaz y Brisma Teresita Alvarez Valdez, como parte del Hackathon SAP x SEIDM 2026 en el Tec de Monterrey.
