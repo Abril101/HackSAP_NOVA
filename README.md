@@ -1,129 +1,129 @@
-# NOVA — Sistema de Detección de Amenazas en Tiempo Real para SAP
+# NOVA — Real-Time Threat Detection System for SAP
 
-🥇 **1er lugar — Hackathon SAP x SEIDM 2026** (21 equipos, +100 participantes, Tec de Monterrey)
+🥇 **1st place — SAP x SEIDM Hackathon 2026** (21 teams, 100+ participants, Tec de Monterrey)
 
-NOVA es un sistema de detección de anomalías no supervisado que monitorea logs de SAP BTP en tiempo real, detecta ataques de ciberseguridad coordinados y envía alertas automáticas accionables en cuestión de segundos. Desarrollado en 6 semanas de trabajo continuo (diseño → despliegue) por un equipo de 5 personas, operó con más de 99% de disponibilidad durante 8 días continuos de evaluación.
-
----
-
-## El problema
-
-Los sistemas SAP generan un volumen enorme de logs distribuidos entre múltiples aplicaciones. Un ataque real rara vez se ve como un solo evento sospechoso — se ve como una correlación de eventos *aparentemente normales* ocurriendo en distintas aplicaciones al mismo tiempo. Un registro aislado puede pasar cualquier filtro; el patrón solo se vuelve evidente cuando se cruza contra otros eventos de la misma ventana de tiempo.
-
-No teníamos datos etiquetados de ataques reales para entrenar un clasificador supervisado, así que el reto era diseñar detección de anomalías no supervisada que fuera rápida (alertar en segundos, no en los 30 minutos que marcaba el límite del reto) y con pocos falsos positivos, sin perder sensibilidad a ataques distribuidos.
-
-## Enfoque: por qué 4 capas en vez de un solo modelo
-
-En vez de apostar todo a un modelo de ML, diseñamos un pipeline de detección por capas, donde cada una cubre un tipo de señal que las otras no capturan:
-
-1. **Reglas MAD (Median Absolute Deviation)** — detecta spikes inmediatos en volumen, robusta a outliers (a diferencia de desviación estándar clásica).
-2. **Z-score robusto histórico** — compara cada ventana de 30 minutos contra el comportamiento reciente del sistema, detectando desviaciones graduales que las reglas fijas no verían.
-3. **Detección por aplicación SAP** — busca específicamente ataques *coordinados*: cuando múltiples aplicaciones SAP se ven afectadas simultáneamente, la señal es mucho más fuerte que cualquier anomalía individual. Así detectamos ataques con hasta 9 aplicaciones comprometidas al mismo tiempo.
-4. **Isolation Forest + One-Class SVM (corroboración)** — captura patrones anómalos no detectables por tipo de log, como respaldo de las capas estadísticas.
-
-El hallazgo más importante del proyecto no fue el modelo más sofisticado: fue que un **Z-score correctamente calibrado** detectó amenazas que los modelos más complejos no lograban capturar. Entender la distribución real de los datos importó más que la complejidad del algoritmo.
+NOVA is an unsupervised anomaly detection system that monitors SAP BTP logs in real time, detects coordinated cybersecurity attacks, and sends actionable alerts within seconds. Built over 6 weeks of continuous work (design → deployment) by a team of 5, it ran with over 99% uptime during 8 days of continuous operation.
 
 ---
 
-## Arquitectura
+## The problem
+
+SAP systems generate a huge volume of logs distributed across multiple applications. A real attack rarely looks like a single suspicious event — it looks like a correlation of seemingly normal events happening across different applications at the same time. An isolated log entry can pass any single filter; the pattern only becomes visible once it's cross-referenced against other events in the same time window.
+
+We had no labeled data for real attacks, so the challenge was designing unsupervised anomaly detection that was fast (alerting within seconds, not the 30-minute limit set by the challenge) and low on false positives, without losing sensitivity to distributed attacks.
+
+## Approach: why 4 layers instead of a single model
+
+Instead of betting everything on one ML model, we designed a layered detection pipeline, where each layer covers a type of signal the others can't catch on their own:
+
+1. **MAD (Median Absolute Deviation) rules** — catches immediate volume spikes, robust to outliers (unlike classic standard deviation).
+2. **Robust historical Z-score** — compares each 30-minute window against the system's recent behavior, catching gradual deviations that fixed rules would miss.
+3. **Per-application SAP detection** — specifically targets *coordinated* attacks: when multiple SAP applications are affected simultaneously, the signal is far stronger than any single anomaly. This is how we caught attacks compromising up to 9 SAP applications at once.
+4. **Isolation Forest + One-Class SVM (corroboration)** — captures anomalous patterns not detectable by log type, as a backstop for the statistical layers.
+
+The most important finding of the project wasn't the most sophisticated model: it was that a **properly calibrated Z-score** caught threats that more complex models missed. Understanding the actual data distribution mattered more than algorithmic complexity.
+
+---
+
+## Architecture
 
 ```
-API SAP (/info, /logs/current)
+SAP API (/info, /logs/current)
         │
         ▼
    pipeline.py  ──────────────────► data/logs_YYYYMMDD_HHMM.csv
-   (polling 60s)
+   (60s polling)
         │
         ▼
-   detector.py (4 capas)
-   ├── Capa 1: Reglas MAD (umbrales dinámicos)
-   ├── Capa 2: Z-score robusto histórico
-   ├── Capa 3: Detección por aplicación SAP (ataques coordinados)
-   └── Capa 4: Isolation Forest + One-Class SVM (corroboración)
+   detector.py (4 layers)
+   ├── Layer 1: MAD rules (dynamic thresholds)
+   ├── Layer 2: Robust historical Z-score
+   ├── Layer 3: Per-application SAP detection (coordinated attacks)
+   └── Layer 4: Isolation Forest + One-Class SVM (corroboration)
         │
-        ├──► POST /alert (endpoint SAP)
+        ├──► POST /alert (SAP endpoint)
         ├──► data/alerts_log.csv
         └──► SAP HANA Cloud (via hana.py)
 
-   dashboard.py (Streamlit) ──► visualización en tiempo real + chatbot de respuesta a amenazas
+   dashboard.py (Streamlit) ──► real-time visualization + threat-response chatbot
 ```
 
 ---
 
-## Resultados
+## Results
 
-- **MTTD (Mean Time To Detect) promedio: 2.6 segundos** — el límite del reto era 30 minutos
-- **89% de alertas** enviadas en menos de 5 segundos
-- **3 ataques reales** detectados durante el hackathon, incluyendo uno coordinado en 9 aplicaciones SAP simultáneamente
-- **>99% disponibilidad** del sistema sobre SAP HANA Cloud y SAP BTP durante 8 días de operación continua
-- Reducción significativa de falsos positivos frente a los enfoques de un solo modelo que probamos inicialmente
-- Cada alerta incluye contexto accionable (qué pasó, cuándo, por qué) más un chatbot integrado para agilizar la respuesta del equipo de seguridad
+- **Average MTTD (Mean Time To Detect): 2.6 seconds** — the challenge's limit was 30 minutes
+- **89% of alerts** sent in under 5 seconds
+- **3 real attacks** detected during the hackathon, including one coordinated attack across 9 SAP applications simultaneously
+- **>99% uptime** running on SAP HANA Cloud and SAP BTP over 8 days of continuous operation
+- Significant reduction in false positives compared to the single-model approaches we tried initially
+- Every alert includes actionable context (what happened, when, and why), plus an integrated chatbot to speed up the security team's response
 
-## Limitaciones y próximos pasos
+## Limitations and next steps
 
-- Al ser no supervisado, la calibración de umbrales (MAD, Z-score) se hizo de forma iterativa contra el comportamiento observado durante el hackathon; un despliegue productivo real necesitaría validación contra un periodo más largo y variado de tráfico.
-- El sistema fue evaluado en el entorno de SAP BTP Trial provisto para el reto, no en un entorno productivo con la escala y diversidad de logs de una empresa real.
+- Since the system is unsupervised, threshold calibration (MAD, Z-score) was tuned iteratively against the traffic observed during the hackathon; a production deployment would need validation against a longer, more varied traffic period.
+- The system was evaluated on the SAP BTP Trial environment provided for the challenge, not on a production environment with the scale and log diversity of a real enterprise.
 
 ---
 
-## Requisitos
+## Requirements
 
 ```
 pip install pandas numpy scikit-learn requests python-dotenv streamlit hdbcli
 ```
 
-## Configuración
+## Configuration
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Create a `.env` file in the project root with the following variables:
 
 ```
-SAP_TOKEN=tu_token_aqui
-SAP_BASE_URL=url_del_servidor_aqui
-HANA_HOST=tu_host_hana
+SAP_TOKEN=your_token_here
+SAP_BASE_URL=your_server_url_here
+HANA_HOST=your_hana_host
 HANA_PORT=443
-HANA_USER=tu_usuario
-HANA_PASSWORD=tu_password
+HANA_USER=your_username
+HANA_PASSWORD=your_password
 ```
-> **Nunca subas el archivo `.env` al repositorio.**
+> **Never commit the `.env` file to the repository.**
 
-## Cómo correr el sistema
+## Running the system
 
-### 1. Pipeline de ingesta y detección (en background)
+### 1. Ingestion and detection pipeline (background)
 ```
 nohup python3 -u pipeline.py > data/pipeline.log 2>&1 &
 ```
-Verificar que está corriendo:
+Check that it's running:
 ```
 tail -f data/pipeline.log
 ```
 
-### 2. Dashboard de visualización
+### 2. Visualization dashboard
 ```
 streamlit run dashboard.py
 ```
-Se abre en `http://localhost:8501`
+Opens at `http://localhost:8501`
 
-### 3. Solo detección (sobre el CSV más reciente)
+### 3. Detection only (on the most recent CSV)
 ```
 python3 detector.py
 ```
 
 ---
 
-## Archivos del proyecto
+## Project files
 
-| Archivo | Descripción |
+| File | Description |
 |---|---|
-| `pipeline.py` | Ingesta de logs desde API SAP, polling cada 60s |
-| `detector.py` | Motor de detección con 4 capas de ML no supervisado |
-| `hana.py` | Conexión y escritura en SAP HANA Cloud |
-| `dashboard.py` | Dashboard interactivo en Streamlit |
-| `eda.py` | Análisis exploratorio de datos |
-| `analysis.py` | Scripts de análisis complementario |
+| `pipeline.py` | Log ingestion from the SAP API, 60s polling |
+| `detector.py` | Detection engine with 4 layers of unsupervised ML |
+| `hana.py` | Connection and writes to SAP HANA Cloud |
+| `dashboard.py` | Interactive Streamlit dashboard |
+| `eda.py` | Exploratory data analysis |
+| `analysis.py` | Supplementary analysis scripts |
 
 ---
 
-## Stack tecnológico
+## Tech stack
 
 - Python 3.9
 - scikit-learn (IsolationForest, One-Class SVM)
@@ -132,6 +132,6 @@ python3 detector.py
 - Streamlit
 - SAP BTP Trial
 
-## Equipo
+## Team
 
-Proyecto desarrollado por Abril Alvarez Mercado, Cedrick Treviño, Steffany Lara, Ana Lidia Hernández Díaz y Brisma Teresita Alvarez Valdez, como parte del Hackathon SAP x SEIDM 2026 en el Tec de Monterrey.
+Built together with Cedrick Treviño, Steffany Lara, Ana Lidia Hernández Díaz, and Brisma Teresita Alvarez Valdez, as part of the SAP x SEIDM Hackathon 2026 at Tec de Monterrey.
